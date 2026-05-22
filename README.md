@@ -1,39 +1,45 @@
-# AgendaFlow Lightweight Runner
+# AgendaFlow
 
-这是一个轻量版 AgendaFlow 多智能体推理系统。它的目标是让用户输入一个 problem/task 后，系统能够自动选择推理流程、生成角色、组织多阶段讨论，并输出最终答案。
-
-当前实现以“能跑通”和“结构上贴近论文思想”为优先目标，不追求完整复现论文中的提示词、协议表格或实验框架。
+AgendaFlow is a lightweight multi-agent reasoning runner inspired by meeting-style deliberation. Given a user task, it selects a reasoning protocol, creates complementary agent roles, runs a phased discussion, synthesizes intermediate artifacts, and produces a final answer.
 
 ## Features
 
-- 交互式输入 API key、API base URL、模型名称、角色数量和任务正文
-- 自动选择推理协议：
-  - `planning`
-  - `problem_solving`
-  - `verification`
-  - `decision_selection`
-- 自动生成 2 到 8 个功能角色，默认 4 个
-- 每个协议按 4 个阶段顺序执行
-- 每阶段收集角色贡献并生成阶段产物
-- 最终答案只基于阶段产物生成
-- 自动保存运行结果到 `agendaflow_results/`
+- Interactive command-line runner
+- Configurable API key, API base URL, model name, and role count
+- Automatic protocol selection
+- Role generation for complementary reasoning perspectives
+- Four-phase structured deliberation
+- Phase-level artifact synthesis
+- Final answer generation from completed artifacts
+- JSON result persistence
+
+## Protocols
+
+AgendaFlow can route a task to one of four protocols:
+
+- `planning`: for plans, schedules, action sequences, and arrangements
+- `problem_solving`: for diagnosing problems and proposing fixes
+- `verification`: for reasoning over rules, evidence, claims, or internal consistency
+- `decision_selection`: for choosing among options under criteria or constraints
+
+If routing is uncertain, the runner defaults to `problem_solving`.
 
 ## Project Structure
 
 ```text
 .
-├── AGENDAFLOW/
-│   ├── __init__.py
-│   ├── llm.py          # Minimal LLM factory and retry helper
-│   ├── models.py       # Pydantic data models
-│   ├── prompts.py      # Lightweight prompt templates
-│   ├── protocols.py    # Small protocol phase templates
-│   ├── runner.py       # Main AgendaFlow execution flow
-│   └── storage.py      # JSON result persistence
-├── config.py           # Default runtime configuration
-├── requirements.txt
-├── run_agendaflow.py   # Interactive CLI entrypoint
-└── README.md
++-- AGENDAFLOW/
+|   +-- __init__.py
+|   +-- llm.py
+|   +-- models.py
+|   +-- prompts.py
+|   +-- protocols.py
+|   +-- runner.py
+|   +-- storage.py
++-- config.py
++-- requirements.txt
++-- run_agendaflow.py
++-- README.md
 ```
 
 ## Installation
@@ -44,14 +50,14 @@ pip install -r requirements.txt
 
 ## Configuration
 
-运行时会交互式询问以下配置：
+The interactive runner asks for:
 
 - API key
 - API base URL
-- 模型名称
-- 角色数量，可选，默认 `4`
+- Model name
+- Role count, from 2 to 8, default `4`
 
-如果直接回车，会使用 `config.py` 中的默认值。也可以通过环境变量覆盖默认配置：
+You can also provide defaults through environment variables:
 
 ```powershell
 $env:OPENAI_API_KEY="your-api-key"
@@ -66,32 +72,33 @@ $env:LLM_TIMEOUT_SECONDS="60"
 python run_agendaflow.py
 ```
 
-示例交互：
+Example:
 
 ```text
 AgendaFlow lightweight runner
 --------------------------------
 API key:
-API base URL [https://api.moonshot.cn/v1]:
-Model name [kimi-k2-turbo-preview]:
+API base URL [https://api.example.com/v1]:
+Model name [your-model-name]:
 Role count (2-8, optional) [4]:
 
 Enter your problem/task. Finish with an empty line:
-我们的线上服务最近间歇性超时，请分析可能原因并给出修复方案。
-
+Our production service has intermittent timeout spikes. Diagnose likely causes and recommend a fix plan.
 ```
 
-程序会输出：
+The runner prints:
 
-- selected protocol
-- generated roles
-- phase artifacts
-- final answer
-- saved result path
+- Selected protocol
+- Generated roles
+- Phase artifacts
+- Final answer
+- Saved result path
 
 ## Output
 
-每次运行会保存一个 JSON 文件到 `agendaflow_results/`，主要字段包括：
+Each run saves a JSON file under `agendaflow_results/`.
+
+The saved result includes:
 
 - `task`
 - `protocol`
@@ -102,27 +109,8 @@ Enter your problem/task. Finish with an empty line:
 - `final_answer`
 - `transcript`
 
-## Design Notes
-
-当前版本已经移除了旧 EasyMeeting 代码中的复杂产品功能，包括：
-
-- 13 类真实会议类型
-- fact checker
-- Tavily / arXiv / RAG / embedding 检索
-- Belbin 团队角色分析
-- 人工插话
-- 会议确认 checklist
-
-这版代码只保留一个集中、可运行的 AgendaFlow 核心流程。
-
-## Quick Check
+## Development Check
 
 ```powershell
 python -m compileall .
-```
-
-如果需要确认旧模块没有残留引用，可以运行：
-
-```powershell
-rg "fact_checker|Tavily|arxiv|KnowledgePreloader|Belbin|MEETING_TYPES|STEP_0|RAG|embedding"
 ```
